@@ -4,9 +4,22 @@ and after FFT
 
 ## Quick Guide to the Repo
 
+This repo contains tools for obtaining lower dimensional feature spaces
+describing MNIST image data using autoencoders and Fourier transforms.
+
+For a detailed description of how these results were obtained see X
+
+### Directory structure
+
+analysis:  
+data:  
+raw_data:  
+src:  
 
 
 ## Background Information
+
+### MNIST Image data
 
 ### DNN and CNN
 
@@ -35,9 +48,27 @@ parameter space to the original feature space.
 Thus autoencoders are used to find the lower dimensional feature space and
 constituent features that best describe the original data.
 
-In particular, we will be 
+An autoencoder is **linear** if the output from each neuron (after the input layer)
+is the same as the input, i.e., if the activation function is the identity transformation.
+Without loss of generality, linear autoencoders can be taken to have  
+  
+number_of_neurons in layer = [number_of_output_features, number_of_compressed_features, number_of_output_features]
+  
+as if the neurons between two sets of weights are linear, the result is simply multiplication
+of the weight matrices before and after the given layer.  So a linear autoencoder with
+multiple hidden layers would have a lot of completely unnecessary redundancy.
+
+We first see how well we can map the MNIST image data using three different linear autoencoder architectures.
+1.  Tied weights, no bias vectors
+2.  Tied weights, bias vectors
+3.  Untied weights.
+
+An autoencoder has tied weights when weight matrix $L - i$ is the transopose of weight matrix $i$, 
+assuming ... (need to be careful with labelling of layers, definition of $L$).
 
 ### Fourier Transformation
+
+Fourier transformation maps between, e.g., spatial position data 
 
 ### Future Directions
 
