@@ -237,3 +237,73 @@ def hybrid_decode(encoded_data, dim_tuple):
 	return (dim_tuple[0] * autoencoded_image + 
 		dim_tuple[1] * fft_autoencoded_image)/(
 		dim_tuple[0] + dim_tuple[1])
+
+
+def scale_encoder(mnist_data_set, encoding_type, dim_key):
+	""" Scale an array of type encoding_type labelled by dim_key """
+	array = getattr(mnist_data_set, encoding_type)[dim_key]
+	if not (encoding_type + '_data' in dir(mnist_data_set) and
+		dim_key in getattr(mnist_data_set, encoding_type + '_data')):
+		scale_dict = {key: getattr(np, key)(array, axis = 0)
+					  for key in ['mean', 'max', 'min']}
+		scaled_data = ((array - scale_dict['mean'])/
+			 (scale_dict['max'] - scale_dict['min']))
+	if encoding_type + '_data' in dir(mnist_data_set):
+		getattr(mnist_data_set, encoding_type + '_data')[dim_key] = scale_dict
+		getattr(mnist_data_set, 'scaled_' + encoding_type)[dim_key] = scaled_data
+	else:
+		setattr(mnist_data_set, encoding_type + '_data', {dim_key: scale_dict})
+		setattr(mnist_data_set, 'scaled_' + encoding_type, {dim_key: scaled_data})
+
+
+def scale_autoencoder(mnist_data_set, dimension):
+	""" Convenience function to scale an MNIST autoencoding with no FFT data."""
+	scale_encoder(mnist_data_set, 'autoencoder', dimension)
+
+
+def scale_fft_autoencoder(mnist_data_set, dimension):
+	""" Convenience function to scale an autoencoding of FFT-ed MNIST data."""
+	scale_encoder(mnist_data_set, 'fft_autoencoder', dimension)
+
+
+def scale_hybrid_autoencoder(mnist_data_set, dim_tuple):
+	""" Convenience function to scale a direct prodcut of autoencodings of
+	unFFT-ed and FFT-ed MNIST data."""
+	scale_encoder(mnist_data_set, 'hybrid_autoencoder', dim_tuple)
+
+
+def add_and_scale_autoencoder(mnist_data_set, dimension):
+	""" Convenience function to obtain an MNIST autoencoding with no FFT data
+		and then to scale it."""
+	add_autoencoded_mnist_data_set(mnist_data_set, dimension)
+	scale_autoencoder(mnist_data_set, dimension)
+
+
+def add_and_scale_fft_autoencoder(mnist_data_set, dimension):
+	""" Convenience function to obtain an autoencoding of FFT-ed MNIST data
+		and then to scale it."""
+	add_fft_autoencoded_mnist_data_set(mnist_data_set, dimension)
+	scale_fft_autoencoder(mnist_data_set, dimension)
+
+
+def add_and_scale_hybrid_autoencoder(mnist_data_set, dimension):
+	""" Convenience function to obtain a direct prodcut of autoencodings of
+	unFFT-ed and FFT-ed MNIST data and then to scale it."""
+	add_hybrid_autoencoded_mnist_data_set(mnist_data_set, dimension)
+	scale_hybrid_autoencoder(mnist_data_set, dimension)
+
+
+def get_mnist_data_and_add_autoencodings(autoencoder_dict):
+	"""Function to obtain mnist data, and add appropriate
+	autoencodings as specified in autoencoder_dict."""
+	mnist = get_mnist_data()
+	for subset in ["train", "validation", "test"]:
+		data_set = getattr(mnist, subset)
+		for dimension in autoencoder_dict['autoencoder']:
+			add_and_scale_autoencoder(data_set, dimension)
+		for dimension in autoencoder_dict['fft_autoencoder']:
+			add_and_scale_fft_autoencoder(data_set, dimension)
+		for dim_tuple in autoencoder_dict['hybrid_autoencoder']:
+			add_and_scale_hybrid_autoencoder(data_set, dim_tuple)
+	return mnist
+
