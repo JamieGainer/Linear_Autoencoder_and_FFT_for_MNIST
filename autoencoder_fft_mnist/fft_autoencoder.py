@@ -136,7 +136,7 @@ def add_fft_autoencoded_mnist_data_set(mnist_data_set, dimension):
 		mnist_data_set.fft_autoencoder = {dimension: encoded_data}
 
 
-def add_hybrid_autoencoded_data_set(mnist_data_set, dim_tuple):
+def add_hybrid_autoencoded_mnist_data_set(mnist_data_set, dim_tuple):
 	""" Add data to a mnist data set (train, validation, or test)
 	consisting of the original data autoencoded to dim_tuple[0] dimensions
 	and the FFT data autoencoded to dim_tuple[1] dimensions.  The result
