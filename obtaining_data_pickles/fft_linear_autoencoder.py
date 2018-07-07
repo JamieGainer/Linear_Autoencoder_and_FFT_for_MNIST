@@ -1,7 +1,7 @@
-""" This code is for untied linear autoencoders with bias terms.
+""" This code is for tied linear autoencoders without bias terms.
 	Call with
 
-	python untied_linear_autoencoder [num_compressed_features num_steps \
+	python tied_no_bias_linear_autoencoder [num_compressed_features num_steps \
 	batch_size tf_seed np_seed learning_algorithm learning_rate]
 
 """
@@ -14,6 +14,8 @@ import tensorflow as tf
 import time
 
 import autoencoder_obtainer as auto
+sys.path.append(auto.python_dir)
+
 
 # Start (wall clock time) timer
 start = time.time()
@@ -67,11 +69,15 @@ parameter['num_initial_features'] = 784
 assert mnist.train.images.shape[1] == parameter['num_initial_features']
 assert len(mnist.train.images.shape) == 2
 
+# Obtain FFT MNIST data
+
+from fft_autoencoder import compressed_fft_data
+fft_data = compressed_fft_data(mnist.train.images)
 
 # Prepare for tensor flow session
 
 X = tf.placeholder(tf.float32,shape=[None, parameter['num_initial_features']])
-y_dict = auto.untied_linear_auto_encoder_arch(parameter['num_initial_features'], 
+y_dict = auto.basic_linear_auto_encoder_arch(parameter['num_initial_features'], 
 	parameter['num_compressed_features'], X)
 y = y_dict['autoencoder']
 
@@ -105,18 +111,14 @@ with tf.Session() as sess:
             step == parameter['num_steps'] - 1):
         	parameter['step_numbers'].append(step)
         	parameter['loss_function_values'].append(sess.run(loss_function, 
-        		feed_dict = {X: mnist.train.images}))
+        		feed_dict = {X: fft_data}))
         	print('On step', step)
         
-        batch_x = auto.next_batch(mnist.train.images, parameter['batch_size'])
+        batch_x = auto.next_batch(fft_data, parameter['batch_size'])
         
         sess.run(train, feed_dict={X: batch_x})
     
-    
-    parameter['W1'] = sess.run(y_dict['W1'])
-    parameter['W2'] = sess.run(y_dict['W2'])
-    parameter['b1'] = sess.run(y_dict['b1'])
-    parameter['b2'] = sess.run(y_dict['b2'])
+    parameter['W'] = sess.run(y_dict['W'])
 
 parameter['time'] = time.time() - start
 

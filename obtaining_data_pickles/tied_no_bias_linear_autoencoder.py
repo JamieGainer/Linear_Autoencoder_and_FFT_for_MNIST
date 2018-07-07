@@ -1,48 +1,131 @@
-""" Google compliant header """
+""" This code is for tied linear autoencoders without bias terms.
+	Call with
+
+	python tied_no_bias_linear_autoencoder [num_compressed_features num_steps \
+	batch_size tf_seed np_seed learning_algorithm learning_rate]
+
+"""
 
 import numpy as np
+import os
+import pickle
+import sys
 import tensorflow as tf
+import time
 
-def init_weights(shape, stddev = 0.1):
-    init_random_dist = tf.truncated_normal(shape, stddev=stddev)
-    return tf.Variable(init_random_dist)
+import autoencoder_obtainer as auto
 
-def basic_linear_auto_encoder_arch(num_initial_features, 
-	num_compressed_features, input_placeholder):
+# Start (wall clock time) timer
+start = time.time()
 
-    X = input_placeholder
-    W = init_weights([num_initial_features, num_compressed_features]) 
+# Obtain parameters for run
 
-    return {'autoencoder': tf.matmul((tf.matmul(X,W)), tf.transpose(W)),
-            'W': W}
+parameter = {             # default parameters
+	'num_compressed_features': 30,
+	'num_steps': 100000,
+	'batch_size': 16,
+	'tf_seed': 11235,
+	'np_seed': 842,
+	'learning_algorithm': 'sgd',
+	'learning_rate': 0.5
+}
 
-def linear_auto_encoder_arch(num_initial_features, num_compressed_features, input_placeholder):
+for index, name, description, type_name in zip([1, 2, 3, 4, 5, 7],
+	['num_compressed_features', 'num_steps', 'batch_size', 'tf_seed', 
+	 'np_seed', 'learning_rate'],
+	['number of compressed features', 'number of steps', 'batch size', 
+	'tensorflow random number seed', 'numpy random number seed', 
+	'learning_rate'],
+	[int, int, int, int, int, float]):
+	
+	if len(sys.argv) > index:
+		try:
+			parameter[name] = type_name(sys.argv[index])
+		except ValueError:
+			error_string = 'Argument ' + str(index) + ', ' +  description
+			error_string += ', must be of ' + str(type_name) + '.'
+			raise ValueError(error_string)
 
-    X = input_placeholder
-    W = init_weights([num_initial_features, num_compressed_features]) 
-    b1 = init_weights([num_compressed_features])
-    b2 = init_weights([num_initial_features])
 
-    return {'autoencoder': tf.matmul((tf.matmul(X,W) + b1), tf.transpose(W)) + b2,
-            'W': W,
-            'b1': b1,
-            'b2': b2}
+if len(sys.argv) > 6:
+	parameter['learning_algorithm'] = sys.argv[6]
 
-def untied_linear_auto_encoder_arch(num_initial_features,
-    num_compressed_features, input_placeholder):
+if parameter['learning_algorithm'] not in ['sgd', 'adam']:
+	raise ValueError('Argument 5, Learning Algorithm must be "sgd" or "adam".')
 
-    X = input_placeholder
-    W1 = init_weights([num_initial_features, num_compressed_features])
-    W2 = init_weights([num_compressed_features, num_initial_features])
-    b1 = init_weights([num_compressed_features])
-    b2 = init_weights([num_initial_features])
+# set seeds
 
-    return {'autoencoder': tf.matmul((tf.matmul(X,W1) + b1), W2) + b2,
-            'W1': W1,
-            'W2': W2,
-            'b1': b1,
-            'b2': b2}
+tf.set_random_seed(parameter['tf_seed'])
+np.random.seed(seed=parameter['np_seed'])
 
-def next_batch(X_data, batch_size):
-    indices = np.random.randint(0, len(X_data), size = batch_size)
-    return X_data[indices]
+
+# obtain MNIST data
+
+from tensorflow.examples.tutorials.mnist import input_data
+mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
+parameter['num_initial_features'] = 784
+assert mnist.train.images.shape[1] == parameter['num_initial_features']
+assert len(mnist.train.images.shape) == 2
+
+
+# Prepare for tensor flow session
+
+X = tf.placeholder(tf.float32,shape=[None, parameter['num_initial_features']])
+y_dict = auto.basic_linear_auto_encoder_arch(parameter['num_initial_features'], 
+	parameter['num_compressed_features'], X)
+y = y_dict['autoencoder']
+
+loss_function = tf.reduce_mean((y - X)**2)
+if parameter['learning_algorithm'] == 'sgd':
+	optimizer = tf.train.GradientDescentOptimizer(
+		learning_rate = parameter['learning_rate'])
+else:
+	optimizer = tf.train.AdamOptimizer()
+
+train = optimizer.minimize(loss_function)
+
+init = tf.global_variables_initializer()
+
+
+# Tensor flow session.  Keep track of loss parameter for learning curve data
+
+parameter['step_numbers'] = []
+parameter['loss_function_values'] = []
+
+with tf.Session() as sess:
+    
+    sess.run(init)
+    
+    for step in range(parameter['num_steps']):
+        
+        if (((step < 10) or (step < 100 and step % 10 == 0) or 
+        	(step < 1000 and step % 100 == 0) or
+        	(step < 10000 and step % 1000 == 0) or
+        	(step % 10000 == 0))  or
+            step == parameter['num_steps'] - 1):
+        	parameter['step_numbers'].append(step)
+        	parameter['loss_function_values'].append(sess.run(loss_function, 
+        		feed_dict = {X: mnist.train.images}))
+        	print('On step', step)
+        
+        batch_x = auto.next_batch(mnist.train.images, parameter['batch_size'])
+        
+        sess.run(train, feed_dict={X: batch_x})
+    
+    parameter['W'] = sess.run(y_dict['W'])
+
+parameter['time'] = time.time() - start
+
+# Write data to pickle
+
+def pickle_file_name(num):
+	return 'run-' + str(pickle_file_label) + '.pickle'
+
+pickle_file_label = 1
+while os.path.exists(pickle_file_name(pickle_file_label)):
+	pickle_file_label += 1
+file_name = pickle_file_name(pickle_file_label)
+
+with open(file_name, 'wb') as pickle_file:
+	pickle.dump(parameter, pickle_file)
+
