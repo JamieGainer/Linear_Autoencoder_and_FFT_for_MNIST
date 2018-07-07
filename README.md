@@ -7,7 +7,7 @@ tools for generating
 
 1. autoencoding of 784 (= 28 x 28 black and white pixel) MNIST data
 2. autoencoding of 784 (= 28 x 28 black and white pixel) Fast Fourier Transformed (FFT) MNIST data
-3. feature spaces consisting of $m$ features from autoencoding MNIST data and $n$
+3. feature spaces consisting of m features from autoencoding MNIST data and n
 features from autoencoding FFT MNIST data.
 
 The autoencoders here are all linear autoencoders with no bias vectors.  
@@ -32,7 +32,7 @@ Finally a notebook in the images directory can be used to visualize the
 effects of the various autoencodings.
 
 Anticpated uses include having lower dimensional spaces for deep densely connected 
-neural networks, as well as exploring the geometry of the data using $k$-means clustering,
+neural networks, as well as exploring the geometry of the data using k-means clustering,
 etc.  I will list my repos that explore these areas as I create them.
 
 Ultimately, of course, the goal is to learn about and to develop new approaches
