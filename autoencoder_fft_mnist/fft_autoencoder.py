@@ -18,6 +18,10 @@ fft_autoencoder_dir = os.path.join(pickle_dir, 'fft_tied_no_bias')
 plots_dir = os.path.join(dir_path, 'plots')
 
 
+def get_mnist_data():
+	from tensorflow.examples.tutorials.mnist import input_data
+	return input_data.read_data_sets("MNIST_data/", one_hot=True)
+
 def compress_fft(fft_data, data_set = 'mnist'):
 	""" For now just works with MNIST data set """
 	assert data_set == 'mnist'
