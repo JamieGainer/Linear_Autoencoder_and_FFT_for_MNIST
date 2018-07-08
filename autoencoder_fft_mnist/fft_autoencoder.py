@@ -297,6 +297,10 @@ def get_mnist_data_and_add_autoencodings(autoencoder_dict):
 	"""Function to obtain mnist data, and add appropriate
 	autoencodings as specified in autoencoder_dict."""
 	mnist = get_mnist_data()
+	for key in ['autoencoder', 'fft_autoencoder', 
+				'hybrid_autoencoder']:
+		if key not in autoencoder_dict:
+			autoencoder_dict[key] = {}
 	for subset in ["train", "validation", "test"]:
 		data_set = getattr(mnist, subset)
 		for dimension in autoencoder_dict['autoencoder']:
